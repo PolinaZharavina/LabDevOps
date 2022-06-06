@@ -1,9 +1,10 @@
-name: telegram message
-on: [push]
-jobs:
+name: flake8 Lint
 
-  Notify_in_Telegram:
-    name: Commit Notify
+on: [push, pull_request]
+
+jobs:
+  notify:
+    name: Notify telegram
     runs-on: ubuntu-latest
     steps:
       - name: send telegram message on push
@@ -21,7 +22,7 @@ jobs:
   flake8-lint:
     runs-on: ubuntu-latest
     name: Lint
-    needs: build
+    needs: notify
     steps:
       - name: Check out source repository
         uses: actions/checkout@v2
@@ -31,8 +32,10 @@ jobs:
           python-version: "3.8"
       - name: flake8 Lint
         uses: py-actions/flake8@v2
+        with:
+          max-line-length: "120"
 
-  create_exe_file:
+  build_exe:
     name: Build Exe File
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +46,8 @@ jobs:
         with:
           packages: |
             pytest
-            pandas
+            pytest-mock
+            Eel
       - name: Package Application
         uses: JackMcKew/pyinstaller-action-windows@main
         with:
@@ -54,24 +58,23 @@ jobs:
           name: my-app
           path: ./dist/windows
 
-  finish_notify:
-    name: Finish Notify
-    needs: [ build, flake8-lint, create_exe_file ]
+  build_telegram_notify:
+    needs: [notify, flake8-lint, build_exe]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Success
-        if: ${{ (needs.build.result == 'success' && needs.flake8-lint.result == 'success' && needs.create_exe_file.result == 'success') }}
+        if: ${{ (needs.notify.result == 'success' && needs.flake8-lint.result == 'success' && needs.build_exe.result == 'success') }}
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TG_TOKEN }}
-          message: Successful created
+            to: ${{ secrets.TG_ID }}
+            token: ${{ secrets.TG_TOKEN }}
+            message: Successful build
 
       - name: Fail
         if: ${{ (needs.notify.result == 'failure' || needs.flake8-lint.result == 'failure' || needs.build_exe.result == 'failure') }}
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.TG_ID }}
-          token: ${{ secrets.TG_TOKEN }}
-          message: Failed created
+            to: ${{ secrets.TG_ID }}
+            token: ${{ secrets.TG_TOKEN }}
+            message: Failed build
