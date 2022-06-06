@@ -1,26 +1,25 @@
 name: telegram message
-on: [push, pull_request]
+on: [push]
 jobs:
-  Notify_in_Telegram:
-    name: Commit Notify
+
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: send telegram message on push
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.TG_ID }}
+          to: ${{ secrets.TG_TO }}
           token: ${{ secrets.TG_TOKEN }}
           message: |
-            ${{ github.actor }} created commit:
-            Commit message: ${{ github.event.commits[0].message }}
-            
-            Repository: ${{ github.repository }}
-            
-            See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+            ${{ github.actor }} Последний коммит:
+            ${{ github.event.commits[0].message }}
+            Куда?: ${{ github.repository }}
+            Коммит: https://github.com/${{ github.repository }}/commit/${{github.sha}}
   flake8-lint:
     runs-on: ubuntu-latest
     name: Lint
-    needs: Notify_in_Telegram
+    needs: build
     steps:
       - name: Check out source repository
         uses: actions/checkout@v2
@@ -31,48 +30,61 @@ jobs:
       - name: flake8 Lint
         uses: py-actions/flake8@v2
 
-  create_exe_file:
-    name: Build Exe File
+
+
+
+  third-job:
     runs-on: ubuntu-latest
+    name: slave
+    needs: flake8-lint
+    if: ${{ always() }}
     steps:
       - uses: actions/checkout@v2
-
       - uses: actions/setup-python@v1
       - uses: BSFishy/pip-action@v1
         with:
           packages: |
-            pytest
-            pandas
-      - name: Package Application
-        uses: JackMcKew/pyinstaller-action-windows@main
+            numpy
+            matplotlib
+            sklearn
+            scikit-image
+            torch
+      - run: python main.py
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
         with:
-          path: ./
-
-      - uses: actions/upload-artifact@v2
+          name: results
+          path: ${{runner.workspace}}/devops/result.txt
+          retention-days: 1
+      - uses: appleboy/telegram-action@master
         with:
-          name: my-app
-          path: ./dist/windows
+          to: ${{ secrets.TG_ID }}
+          token: ${{ secrets.TG_TOKEN }}
+          document: ${{runner.workspace}}/devops/result.txt
+          message: |
+            artifacts
+      - run: pwd
+      - run: ls
 
-  finish_notify:
-    name: Finish Notify
-    needs: [ Notify_in_Telegram, flake8-lint, create_exe_file ]
+  on_finish:
+    needs: third-job
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Success
-        if: ${{ (needs.build.result == 'success' && needs.flake8-lint.result == 'success' && needs.create_exe_file.result == 'success') }}
+
+      - name: Success message
+        if: ${{ success() }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TG_ID }}
           token: ${{ secrets.TG_TOKEN }}
-          message: Successful created
+          message: Все ОК
+          document: results.zip
 
-      - name: Fail
-        if: ${{ (needs.notify.result == 'failure' || needs.flake8-lint.result == 'failure' || needs.build_exe.result == 'failure') }}
+      - name: Failure message
+        if: ${{ failure() }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TG_ID }}
           token: ${{ secrets.TG_TOKEN }}
-          message: Failed created
-
-
+          message: Что-то пошло не так(
