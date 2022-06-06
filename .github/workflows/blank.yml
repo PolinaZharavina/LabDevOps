@@ -47,7 +47,7 @@ jobs:
               sklearn
               scikit-image
               torch
-        - run: python main.py
+        - run: python IOR_Lab2.ipynb
         - name: Upload Artifact
           uses: actions/upload-artifact@v3
           with:
