@@ -8,8 +8,8 @@ jobs:
       - name: send telegram message on push
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
+          to: ${{ secrets.TG_ID }}
+          token: ${{ secrets.TG_TOKEN }}
           message: |
             ${{ github.actor }} created commit:
             Commit message: ${{ github.event.commits[0].message }}
@@ -20,7 +20,7 @@ jobs:
   flake8-lint:
     runs-on: ubuntu-latest
     name: Lint
-    needs: notify
+    needs: Notify_in_Telegram
     steps:
       - name: Check out source repository
         uses: actions/checkout@v2
@@ -55,7 +55,7 @@ jobs:
 
   finish_notify:
     name: Finish Notify
-    needs: [ notify, flake8-lint, create_exe_file ]
+    needs: [ Notify_in_Telegram, flake8-lint, create_exe_file ]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
