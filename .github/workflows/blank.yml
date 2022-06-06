@@ -1,17 +1,16 @@
-name: flake8 Lint
-
+name: telegram message
 on: [push, pull_request]
-
 jobs:
-  notify:
-    name: Notify telegram
+
+  Notify_in_Telegram:
+    name: Commit Notify
     runs-on: ubuntu-latest
     steps:
       - name: send telegram message on push
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.TG_ID }}
-          token: ${{ secrets.TG_TOKEN }}
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
             ${{ github.actor }} created commit:
             Commit message: ${{ github.event.commits[0].message }}
@@ -32,8 +31,6 @@ jobs:
           python-version: "3.8"
       - name: flake8 Lint
         uses: py-actions/flake8@v2
-        with:
-          max-line-length: "120"
 
   create_exe_file:
     name: Build Exe File
@@ -57,23 +54,26 @@ jobs:
           name: my-app
           path: ./dist/windows
 
-  build_telegram_notify:
-    needs: [notify, flake8-lint, build_exe]
+  finish_notify:
+    name: Finish Notify
+    needs: [ notify, flake8-lint, create_exe_file ]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Success
-        if: ${{ (needs.notify.result == 'success' && needs.flake8-lint.result == 'success' && needs.build_exe.result == 'success') }}
+        if: ${{ (needs.build.result == 'success' && needs.flake8-lint.result == 'success' && needs.create_exe_file.result == 'success') }}
         uses: appleboy/telegram-action@master
         with:
-            to: ${{ secrets.TG_ID }}
-            token: ${{ secrets.TG_TOKEN }}
-            message: Successful build
+          to: ${{ secrets.TG_ID }}
+          token: ${{ secrets.TG_TOKEN }}
+          message: Successful created
 
       - name: Fail
         if: ${{ (needs.notify.result == 'failure' || needs.flake8-lint.result == 'failure' || needs.build_exe.result == 'failure') }}
         uses: appleboy/telegram-action@master
         with:
-            to: ${{ secrets.TG_ID }}
-            token: ${{ secrets.TG_TOKEN }}
-            message: Failed build
+          to: ${{ secrets.TG_ID }}
+          token: ${{ secrets.TG_TOKEN }}
+          message: Failed created
+
+
