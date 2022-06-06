@@ -54,13 +54,13 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: results
-          path: ${{runner.workspace}}/devops/result.txt
+          path: ${{runner.workspace}}/LabDevOps/result.txt
           retention-days: 1
       - uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TG_ID }}
           token: ${{ secrets.TG_TOKEN }}
-          document: ${{runner.workspace}}/devops/result.txt
+          document: ${{runner.workspace}}/LabDevOps/result.txt
           message: |
             artifacts
       - run: pwd
