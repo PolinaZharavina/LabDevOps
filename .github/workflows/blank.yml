@@ -1,7 +1,6 @@
 name: telegram message
 on: [push, pull_request]
 jobs:
-
   Notify_in_Telegram:
     name: Commit Notify
     runs-on: ubuntu-latest
