@@ -12,9 +12,9 @@ jobs:
           to: ${{ secrets.TG_ID }}
           token: ${{ secrets.TG_TOKEN }}
           message: |
-            ${{ github.actor }} Последний коммит:
-            ${{ github.event.commits[0].message }}
-            Куда?: ${{ github.repository }}
+            Автор: ${{ github.actor }}
+            Последний коммит: ${{ github.event.commits[0].message }}
+            Куда: ${{ github.repository }}
             Коммит: https://github.com/${{ github.repository }}/commit/${{github.sha}}
   flake8-lint:
     runs-on: ubuntu-latest
