@@ -1,0 +1,77 @@
+name: telegram message
+on: [push]
+jobs:
+
+  Notify_in_Telegram:
+    name: Commit Notify
+    runs-on: ubuntu-latest
+    steps:
+      - name: send telegram message on push
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ${{ github.actor }} created commit:
+            Commit message: ${{ github.event.commits[0].message }}
+            
+            Repository: ${{ github.repository }}
+            
+            See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+  flake8-lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    needs: build
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
+
+  create_exe_file:
+    name: Build Exe File
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+      - uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            pytest
+            pandas
+      - name: Package Application
+        uses: JackMcKew/pyinstaller-action-windows@main
+        with:
+          path: ./
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: my-app
+          path: ./dist/windows
+
+  finish_notify:
+    name: Finish Notify
+    needs: [ build, flake8-lint, create_exe_file ]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        if: ${{ (needs.build.result == 'success' && needs.flake8-lint.result == 'success' && needs.create_exe_file.result == 'success') }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: Successful created
+
+      - name: Fail
+        if: ${{ (needs.notify.result == 'failure' || needs.flake8-lint.result == 'failure' || needs.build_exe.result == 'failure') }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: Failed created
