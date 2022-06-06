@@ -48,12 +48,6 @@ jobs:
               scikit-image
               torch
         - run: python IOR_Lab2.ipynb
-        - name: Upload Artifact
-          uses: actions/upload-artifact@v3
-          with:
-            name: results
-            path: ${{runner.workspace}}/devops/result.txt
-            retention-days: 1
         - run: pwd
         - run: ls
 
