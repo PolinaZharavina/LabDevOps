@@ -1,84 +1,68 @@
-name: telegram message
-on: [push]
-jobs:
+name: CI
 
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
   build:
-    name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9"]
+
     steps:
-      - name: send telegram message on push
-        uses: appleboy/telegram-action@master
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -c "import sys; print(sys.version)"
+          python -m pip install --upgrade pip
+          python main.py
+  
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+
+  telegram_success:
+    runs-on: ubuntu-latest
+    needs: [ push_to_registry ]
+    steps:
+      - name: send message
+        uses: "appleboy/telegram-action@master"
         with:
           to: ${{ secrets.TG_ID }}
           token: ${{ secrets.TG_TOKEN }}
           message: |
-            Автор: ${{ github.actor }}
-            Последний коммит: ${{ github.event.commits[0].message }}
-            Куда: ${{ github.repository }}
-            Коммит: https://github.com/${{ github.repository }}/commit/${{github.sha}}
-            
-            
-  flake8-lint:
+            Все ОК
+            Repository: ${{ github.repository }}
+            Commit message: ${{ github.event.commits[0].message }}
+            by: ${{ github.actor }}
+  
+  telegram_fail:
+    if: failure() 
     runs-on: ubuntu-latest
-    name: Lint
-    needs: build
+    needs: [ push_to_registry ]
     steps:
-      - name: Check out source repository
-        uses: actions/checkout@v2
-      - name: Set up Python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
-      - name: flake8 Lint
-        uses: py-actions/flake8@v2
-
-
-
-  build_exe:
-    name: Build Exe File
-    runs-on: ubuntu-latest
-    needs: flake8-lint
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v1
-      - uses: BSFishy/pip-action@v1
-        with:
-          packages: |
-            pytest
-            pytest-mock
-            Eel
-      - name: Package Application
-        uses: JackMcKew/pyinstaller-action-windows@main
-        with:
-          path: ./
-      
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: results
-          path: ${{runner.workspace}}/${{env.BUILD_REP}}/results.zip
-          retention-days: 1
-
-  on_finish:
-    needs: build_exe
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Success message
-        if: ${{ success() }}
-        uses: appleboy/telegram-action@master
+      - name: send message
+        uses: "appleboy/telegram-action@master"
         with:
           to: ${{ secrets.TG_ID }}
           token: ${{ secrets.TG_TOKEN }}
-          message: Все ОК
-          document: results.zip
-
-      - name: Failure message
-        if: ${{ failure() }}
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TG_ID }}
-          token: ${{ secrets.TG_TOKEN }}
-          message: Что-то пошло не так(
+          message: |
+            Что-то пошло не так
+            Repository: ${{ github.repository }}
+            Commit message: ${{ github.event.commits[0].message }}
+            bad human: ${{ github.actor }}
