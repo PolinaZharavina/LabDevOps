@@ -33,41 +33,9 @@ jobs:
 
 
 
-  third-job:
-    runs-on: ubuntu-latest
-    name: slave
-    needs: flake8-lint
-    if: ${{ always() }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-      - uses: BSFishy/pip-action@v1
-        with:
-          packages: |
-            numpy
-            matplotlib
-            sklearn
-            scikit-image
-            torch
-      - run: python IOR_Lab2.ipynb
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: results
-          path: ${{runner.workspace}}/LabDevOps/result.txt
-          retention-days: 1
-      - uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TG_ID }}
-          token: ${{ secrets.TG_TOKEN }}
-          document: ${{runner.workspace}}/LabDevOps/result.txt
-          message: |
-            artifacts
-      - run: pwd
-      - run: ls
+  
 
   on_finish:
-    needs: third-job
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
