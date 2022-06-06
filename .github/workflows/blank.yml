@@ -35,7 +35,7 @@ jobs:
         with:
           max-line-length: "120"
 
-  build_exe:
+  create_exe_file:
     name: Build Exe File
     runs-on: ubuntu-latest
     steps:
@@ -46,8 +46,7 @@ jobs:
         with:
           packages: |
             pytest
-            pytest-mock
-            Eel
+            pandas
       - name: Package Application
         uses: JackMcKew/pyinstaller-action-windows@main
         with:
