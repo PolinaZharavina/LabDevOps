@@ -16,6 +16,8 @@ jobs:
             Последний коммит: ${{ github.event.commits[0].message }}
             Куда: ${{ github.repository }}
             Коммит: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+            
+            
   flake8-lint:
     runs-on: ubuntu-latest
     name: Lint
@@ -35,6 +37,7 @@ jobs:
   build_exe:
     name: Build Exe File
     runs-on: ubuntu-latest
+    needs: flake8-lint
     steps:
       - uses: actions/checkout@v2
 
