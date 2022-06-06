@@ -47,7 +47,6 @@ jobs:
               sklearn
               scikit-image
               torch
-        - run: python IOR_Lab2.ipynb
         - run: pwd
         - run: ls
 
