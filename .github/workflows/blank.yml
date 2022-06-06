@@ -52,11 +52,6 @@ jobs:
         uses: JackMcKew/pyinstaller-action-windows@main
         with:
           path: ./
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: my-app
-          path: ./dist/windows
       
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
