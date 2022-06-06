@@ -57,6 +57,13 @@ jobs:
         with:
           name: my-app
           path: ./dist/windows
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: results
+          path: ${{runner.workspace}}/${{env.BUILD_REP}}/results.zip
+          retention-days: 1
 
   on_finish:
     needs: build_exe
