@@ -60,7 +60,7 @@ jobs:
   
 
   on_finish:
-    needs: slave
+    needs: third-job
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
